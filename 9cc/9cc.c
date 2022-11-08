@@ -35,15 +35,33 @@ typedef enum
     ND_NUM, // 整数
 } NodeKind;
 
-typedef Node Node;
-
 struct Node
 {
     NodeKind kind;
-    Node *lhs;
-    Node *rhs;
+    struct Node *lhs;
+    struct Node *rhs;
     int val; // kindが整数の場合のみ使う
 };
+
+typedef struct Node Node;
+
+// 入力プログラム
+char *user_input;
+
+Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
+Node *new_node_num(int val);
+Node *expr();
+Node *primary();
+Node *mul();
+void error(char *fmt, ...);
+void error_at(char *loc, char *fmt, ...);
+bool consume(char op);
+void expect(char op);
+int expect_number();
+bool at_eof();
+Token *new_token(TokenKind kind, Token *cur, char *str);
+Token *tokenize(char *p);
+void gen(Node *node);
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs)
 {
@@ -124,9 +142,6 @@ void error(char *fmt, ...)
     exit(1);
 }
 
-// 入力プログラム
-char *user_input;
-
 void error_at(char *loc, char *fmt, ...)
 {
     va_list ap;
@@ -206,7 +221,7 @@ Token *tokenize(char *p)
             continue;
         }
 
-        if (*p == '+' || *p == '-')
+        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')')
         {
             cur = new_token(TK_RESERVED, cur, p++);
             continue;
@@ -269,26 +284,23 @@ int main(int argc, char **argv)
     }
 
     // トークナイズする
-    token = tokenize(argv[1]);
+    user_input = argv[1];
+    token = tokenize(user_input);
 
+    // 抽象構文木を作る
+    Node *node = expr();
+
+    // アセンブリの前半を生成
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
     printf("main:\n");
 
-    printf("    mov rax, %d\n", expect_number());
+    // 抽象構文木を下りながらアセンブリを生成
+    gen(node);
 
-    while (!at_eof())
-    {
-        if (consume('+'))
-        {
-            printf("    add rax, %d\n", expect_number());
-            continue;
-        }
-
-        expect('-');
-        printf("    sub rax, %d\n", expect_number());
-    }
-
+    // スタックトップの値を返す
+    printf("    pop rax\n");
     printf("    ret\n");
+
     return 0;
 }
