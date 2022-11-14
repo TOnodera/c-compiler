@@ -75,6 +75,14 @@ Token *tokenize()
             continue;
         }
 
+        // 変数
+        if ('a' <= *p && *p <= 'z')
+        {
+            cur = new_token(TK_INDENT, cur, p++);
+            cur->len = 1;
+            continue;
+        }
+
         // Single-letter punctuator
         if (strchr("+-*/()<>", *p))
         {
