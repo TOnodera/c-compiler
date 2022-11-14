@@ -32,15 +32,17 @@ extern char *user_input;
 // 抽象構文木のノードの種類
 typedef enum
 {
-    ND_ADD, // +
-    ND_SUB, // -
-    ND_MUL, // *
-    ND_DIV, // /
-    ND_NUM, // 整数
-    ND_EQ,  // ==
-    ND_NE,  // !=
-    ND_LT,  // <
-    ND_LE,  // <=
+    ND_ADD,   // +
+    ND_SUB,   // -
+    ND_MUL,   // *
+    ND_DIV,   // /
+    ND_NUM,   // 整数
+    ND_EQ,    // ==
+    ND_NE,    // !=
+    ND_LT,    // <
+    ND_LE,    // <=
+    ND_LVAR,  // ローカル変数
+    ND_ASSIGN // =
 } NodeKind;
 
 struct Node
@@ -48,10 +50,13 @@ struct Node
     NodeKind kind;
     struct Node *lhs;
     struct Node *rhs;
-    int val; // kindが整数の場合のみ使う
+    int val;    // kindが整数の場合のみ使う
+    int offset; // kindがND_LVALの場合のみ使う
 };
 
 typedef struct Node Node;
+
+extern Node *code[100];
 
 Node *new_node(NodeKind kind);
 Node *new_node_num(int val);
@@ -71,5 +76,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len);
 bool startswith(char *p, char *q);
 Token *tokenize();
 void gen(Node *node);
+void gen_lval(Node *node);
 Node *unary();
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
+void program();

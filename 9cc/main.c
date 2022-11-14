@@ -1,7 +1,7 @@
 #include "9cc.h"
 
-char* user_input;
-Token* token;
+char *user_input;
+Token *token;
 
 void error(char *fmt, ...)
 {
@@ -36,21 +36,29 @@ int main(int argc, char **argv)
 
     // トークナイズする
     user_input = argv[1];
-    token = tokenize(user_input);
-
-    // 抽象構文木を作る
-    Node *node = expr();
+    tokenize();
+    program();
 
     // アセンブリの前半を生成
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
     printf("main:\n");
 
-    // 抽象構文木を下りながらアセンブリを生成
-    gen(node);
+    // プロローグ
+    printf("    push rbp\n");
+    printf("    mov rbp,rsp\n");
+    printf("    sub srp, 208\n");
 
-    // スタックトップの値を返す
-    printf("    pop rax\n");
+    // 先頭の式から順にコード生成
+    for (int i = 0; code[i]; i++)
+    {
+        gen(code[i]);
+        printf("    pop rax\n");
+    }
+
+    // エピローグ
+    printf("    mov rsp, rbp\n");
+    printf("    pop rbp\n");
     printf("    ret\n");
 
     return 0;
